@@ -24,11 +24,14 @@ const User = sequelize.define('users', {
     },
 
     gender: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM(['male', 'female', 'other']),
         allowNull: false
     },
-
-
 });
 
+User.prototype.toJSON = function () {
+    const values = Object.assign({}, this.get());
+    delete values.password;
+    return values;
+}
 module.exports = User;
