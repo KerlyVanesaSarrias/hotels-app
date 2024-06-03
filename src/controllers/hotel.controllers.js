@@ -1,9 +1,16 @@
 const catchError = require('../utils/catchError');
 const Hotel = require('../models/Hotel');
 const City = require('../models/City');
+const { Op } = require('sequelize');
+const Image = require('../models/Image');
 
 const getAll = catchError(async(req, res) => {
-    const results = await Hotel.findAll({include:[City]});
+    const {cityId, name} = req.query;
+    const where = {};
+    if(cityId) where.cityId=cityId;
+    if(name) where.name={[Op.iLike]: `%${name}%`};
+    console.log(cityId)
+    const results = await Hotel.findAll({include:[City, Image], where:where});
     return res.json(results);
 });
 
@@ -14,7 +21,7 @@ const create = catchError(async(req, res) => {
 
 const getOne = catchError(async(req, res) => {
     const { id } = req.params;
-    const result = await Hotel.findByPk(id, {include:[City]});
+    const result = await Hotel.findByPk(id, {include:[City, Image]});
     if(!result) return res.sendStatus(404);
     return res.json(result);
 });
