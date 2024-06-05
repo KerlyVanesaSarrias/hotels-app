@@ -3,15 +3,33 @@ const Hotel = require('../models/Hotel');
 const City = require('../models/City');
 const { Op } = require('sequelize');
 const Image = require('../models/Image');
+const Review = require('../models/Review');
 
 const getAll = catchError(async(req, res) => {
     const {cityId, name} = req.query;
     const where = {};
     if(cityId) where.cityId=cityId;
     if(name) where.name={[Op.iLike]: `%${name}%`};
-    console.log(cityId)
-    const results = await Hotel.findAll({include:[City, Image], where:where});
-    return res.json(results);
+    const results = await Hotel.findAll({
+        include:[City, Image],
+        where: where,
+        raw: true,
+    });
+    
+    const hotelsWhithAvgPromises = results.map(async hotel => {
+        const reviews = await Review.findAll({where: {hotelId: hotel.id},raw: true});
+        let average =0;
+        reviews.forEach(review  => {
+            average += +review.rating;
+        });
+        return {
+            ...hotel,
+        average: +(average / reviews.length).toFixed(2),
+    }
+});
+    const hotelsWhithAvg = await Promise.all(hotelsWhithAvgPromises)
+    return res.json(hotelsWhithAvg)
+    
 });
 
 const create = catchError(async(req, res) => {
